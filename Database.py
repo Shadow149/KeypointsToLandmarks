@@ -8,6 +8,7 @@ import random
 import itertools
 from DataSource.CelebA import CelebA
 from DataSource.LS3D import LS3D
+from DataSource.Herb import Herb
 
 
 class Database(Dataset):
@@ -36,6 +37,8 @@ class Database(Dataset):
             self.Datasource=CelebA(self.test,self.metadata)
         if(dataset_name =='LS3D'):
             self.Datasource=LS3D(self.test,self.metadata)
+        if(dataset_name =='Herb'):
+            self.Datasource=Herb(self.test,self.metadata)
         
         if (self.image_keypoints is not None):
             self.files = list(self.image_keypoints.keys())

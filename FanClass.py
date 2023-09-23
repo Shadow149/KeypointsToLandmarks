@@ -152,8 +152,8 @@ class FAN_Model():
 
         log_text('Current LR ' + str(self.optimizer.param_groups[0]['lr']),self.experiment_name,self.log_path)
         while(True):
+            log_text(f'Iteration: {self.iterations}', self.experiment_name, self.log_path)
             for i_batch, sample in enumerate(dataloader):
-
                 self.optimizer.zero_grad()
 
                 #reduce the learning rate a few times during training
@@ -179,7 +179,6 @@ class FAN_Model():
                     self.iterations+=1
                     self.save_stage1()    
                     return
-
 
                 input = my_cuda(sample['image'])
                 descriptorpairs = my_cuda(sample['positive_pairs'])
@@ -268,6 +267,7 @@ class FAN_Model():
 
                 loss = 10 * descriptor_losses + loss_detector1 + loss_detector2
                 loss.backward()
+                log_text(f"I_batch: {i_batch}/{len(dataloader)}", self.experiment_name, self.log_path)
                 self.optimizer.step()
                 self.iterations+=1
 
@@ -280,6 +280,7 @@ class FAN_Model():
         count = 0
         log_text(f"Training Begins", self.experiment_name,self.log_path)
         while(True):
+            log_text(f'Iteration: {self.iterations}', self.experiment_name, self.log_path)
             for i_batch, sample in enumerate(dataloader):
                 
                 if (self.iterations > 0  and self.iterations in self.lr_step_schedual_stage2):
@@ -307,6 +308,7 @@ class FAN_Model():
                 loss.backward()
                 self.optimizer.step()
                 self.iterations += 1
+                log_text(f"I_batch: {i_batch}/{len(dataloader)}", self.experiment_name, self.log_path)
                 
                 if(self.iterations%1000==0):
                     log_text(f"Iteration:{self.iterations} Loss:{loss.item()}", self.experiment_name, self.log_path)
