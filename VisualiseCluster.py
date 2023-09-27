@@ -121,6 +121,62 @@ def ShowClusters(keypoints,log_path,experiment_name,number_of_clusters, dataset,
         log_text(f"Cluster images created in {filename}", experiment_name,log_path)
         plt.close(fig)
 
+def ShowAllKeypoints(keypoints,log_path,experiment_name, dataset, name):
+      
+
+    ###
+    image_names=[k for k in keypoints.keys()]
+    image_names.sort()
+    image_names=image_names[:13*8]
+    ###
+        
+    counter_figureimages=0
+    counter_datasetimages=0
+
+    fig, subplots= plt.subplots(8,8,figsize=(15,15))
+    subplots=subplots.reshape(-1)
+    fig.subplots_adjust(wspace=0,hspace=0)
+
+    for s in subplots:
+        s.set_axis_off()
+
+    while counter_figureimages<64:
+
+        #for the case where cluster has less than 64 instances
+        if(counter_datasetimages>len(keypoints)-1) or counter_datasetimages >= len(image_names):
+            filename = get_logs_path(experiment_name,log_path) / name
+            fig.savefig(filename)
+            break
+        
+        imagename = image_names[counter_datasetimages]
+        imagepoints = keypoints[imagename]
+
+        
+        image ,_= dataset.Datasource.getimage_FAN(imagename, is_it_test_sample=False)
+        ax=subplots[counter_figureimages]
+
+        if(imagepoints.shape[1]==2):
+          imagepoints=np.append(imagepoints,np.arange(len(imagepoints)).reshape(-1,1),axis=1)
+
+        # image = np.pad(image, 10)
+        x = 4*imagepoints[:, 0]
+        y = 4*imagepoints[:, 1]
+
+        if len(x) == 0:
+          counter_datasetimages += 1
+          continue
+
+        ax.imshow(image)
+        ax.scatter(x,y)
+
+        counter_figureimages+=1
+
+        counter_datasetimages+=1
+
+        filename = get_logs_path(experiment_name,log_path) / name
+        fig.savefig(filename)
+        log_text(f"Cluster images created in {name}", experiment_name,log_path)
+        plt.close(fig)
 
 if __name__=="__main__":
     main()

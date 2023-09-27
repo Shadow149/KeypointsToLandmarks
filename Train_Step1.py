@@ -9,6 +9,7 @@ from Database import Database
 from torch.utils.data import Dataset, DataLoader
 from FanClass import FAN_Model
 from Visualise import ShowTrainExamples
+from VisualiseCluster import ShowAllKeypoints
 from eval import test_stage1 as evalModel
 
 def train(config):
@@ -118,12 +119,14 @@ def train(config):
 
     train_dataloader = DataLoader(train_dataset, batch_size=config.batchSize, shuffle=True, num_workers=config.num_workers,drop_last=True)
 
-
+    ShowAllKeypoints(keypoints,log_path,config.experiment_name, train_dataloader, f'ClusterAllInit.jpg')
     while (FAN.iterations<config.total_iterations_stage1):
 
         FAN.Train_stage1(train_dataloader)
 
         keypoints,keypoints_val,_=FAN.Update_pseudoLabels(cluster_dataloader)
+        
+        ShowAllKeypoints(keypoints,log_path,config.experiment_name, train_dataloader, f'ClusterAll{FAN.iterations}.jpg')
 
         ShowTrainExamples(keypoints_val,log_path,config.experiment_name,config.dataset_name,metadata,f'TrainIteration{FAN.iterations}.jpg')
 

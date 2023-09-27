@@ -38,17 +38,17 @@ class Configuration():
         hyperparameters.batchSize=16
         hyperparameters.useflip=True
 
-        #params Stage 1
+        #params Stage 1        
         hyperparameters.batchSize_superpoint=16
-        hyperparameters.confidence_thres_superpoint=0.15
-        hyperparameters.bootstrapping_iterations=1000 # First training before keypoints found...?
-        hyperparameters.iterations_per_round=1000 # How often clusters are done
-        hyperparameters.total_iterations_stage1=200000 # Max iters
-        hyperparameters.remove_superpoint_outliers_percentage=0.4
+        hyperparameters.confidence_thres_superpoint=0.25
+        hyperparameters.bootstrapping_iterations=15000 # First training before keypoints found...?
+        hyperparameters.iterations_per_round=2500 # How often clusters are done
+        hyperparameters.total_iterations_stage1=100000 # Max iters
+        hyperparameters.remove_superpoint_outliers_percentage=0.5
         hyperparameters.M=100
         hyperparameters.confidence_thres_FAN=0.15
         hyperparameters.nms_thres_FAN=2
-        hyperparameters.lr_step_schedual_stage1=[150000,180000]
+        hyperparameters.lr_step_schedual_stage1=[75000,90000]
 
 
         hyperparameters.nms_thres_superpoint=8
