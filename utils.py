@@ -53,6 +53,13 @@ def get_checkpoints_path(experiment_name,log_path):
     CheckPointDirectory=log_path / experiment_name / "CheckPoints/"
     return CheckPointDirectory
 
+def get_paths_for_cluster_visualisation(experiment_name,log_path):
+    CheckPointDirectory=get_checkpoints_path(experiment_name,log_path)
+    listoffiles=list(str(f.resolve()) for f in CheckPointDirectory.glob('*')) 
+    path_to_keypoints=max([f for f in listoffiles if '.pickle' in f and 'UpdatedKeypoints' in f or 'Super' in f], key=os.path.getctime)
+    log_text('Keypoints loaded from :'+(str(path_to_keypoints)),experiment_name,log_path)
+    return path_to_keypoints
+
 def initialize_log_dirs(experiment_name,log_path):
 
     CheckPointDirectory=get_checkpoints_path(experiment_name,log_path)

@@ -31,7 +31,7 @@ class Herb():
 
         self.files = []
         self.boxes = {}
-        max_ = 10000
+        max_ = 50000
         for k in glob.glob(self.datapath+'/**/*.jpg', recursive=True):
           max_ -= 1
           self.files.append(k)

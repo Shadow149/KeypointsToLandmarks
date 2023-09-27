@@ -40,23 +40,23 @@ class Configuration():
         #params Stage 1
         hyperparameters.batchSize_superpoint=16
         hyperparameters.confidence_thres_superpoint=0.15
-        hyperparameters.bootstrapping_iterations=1500 # First training before keypoints found...?
-        hyperparameters.iterations_per_round=250 # How often clusters are done
-        hyperparameters.total_iterations_stage1=10000 # Max iters
+        hyperparameters.bootstrapping_iterations=30000 # First training before keypoints found...?
+        hyperparameters.iterations_per_round=5000 # How often clusters are done
+        hyperparameters.total_iterations_stage1=200000 # Max iters
         hyperparameters.remove_superpoint_outliers_percentage=0.4
         hyperparameters.M=100
         hyperparameters.confidence_thres_FAN=0.15
         hyperparameters.nms_thres_FAN=2
-        hyperparameters.lr_step_schedual_stage1=[7500,9000]
+        hyperparameters.lr_step_schedual_stage1=[150000,180000]
 
 
         hyperparameters.nms_thres_superpoint=8
         
 
         #params Stage 2
-        hyperparameters.lr_step_schedual_stage2=[2500,3500]      
-        hyperparameters.total_iterations_stage2=10000
-        hyperparameters.save_checkpoint_frequency=1000
+        hyperparameters.lr_step_schedual_stage2=[50000,70000]      
+        hyperparameters.total_iterations_stage2=200000
+        hyperparameters.save_checkpoint_frequency=20000
 
 
         #scale for different number of gpus
