@@ -211,7 +211,8 @@ class Herb():
             keypoints_originalres = np.column_stack((keypoitns_aug.to_xy_array(), keypoints_originalres[:, 2:]))
 
 
-        minx,miny,maxx,maxy=self.getFANBox(imagefile,image.shape[1],image.shape[0],is_it_test_sample,self.weight)
+        #minx,miny,maxx,maxy=self.getFANBox(imagefile,image.shape[1],image.shape[0],is_it_test_sample,self.weight)
+        minx,miny,maxx,maxy = 20,20,200,200
 
         image=image[miny:maxy,minx:maxx,:]
         scaledImage=cv2.resize(image,dsize=(256,256))

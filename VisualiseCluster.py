@@ -10,57 +10,62 @@ import random
 import utils
 from utils import *
 from configuration import Configuration
+from FanClass import FAN_Model
+from torch.utils.data import Dataset, DataLoader
+
 
 def main():
-    parser = argparse.ArgumentParser(description='Unsupervised Learning of Object Landmarks via Self-Training Correspondence (NeurIPS20)')
-    parser.add_argument('--dataset_name', choices=['CelebA','LS3D','Herb'], help='Select training dataset')
-    parser.add_argument('--num_workers', default=0, help='Number of workers',type=int)
-    parser.add_argument('--experiment_name', help='Name of experiment you from which checkpoint or groundtruth is going to be loaded')
 
-    args=parser.parse_args()
-
-    with open('paths/main.yaml') as file:
+    with open('paths.yml') as file:
         paths = yaml.load(file, Loader=yaml.FullLoader)
     log_path=paths['log_path']
+    metadata=paths['metadata']
 
     config=Configuration().params
 
-    utils.initialize_log_dirs(args.experiment_name,log_path)
-    path_to_keypoints=utils.get_paths_for_cluster_visualisation(args.experiment_name,log_path)
-    keypoints=utils.load_keypoints(path_to_keypoints)
-    ShowClusters( keypoints, log_path, args.experiment_name,config.params.M,args.dataset_name)
+    utils.initialize_log_dirs(config.experiment_name,log_path)
+    # path_to_keypoints=utils.get_paths_for_cluster_visualisation(config.experiment_name,log_path)
+    # keypoints=utils.load_keypoints(path_to_keypoints)
 
-def ShowVisualRes(keypoints,log_path,experiment_name,number_of_clusters,dataset_name):
+    criterion = nn.MSELoss().cuda()
 
-    fig = plt.figure(figsize=(34,55))
-    gs1 = gridspec.GridSpec(13, 8)
-    gs1.update(wspace=0.0, hspace=0.0)
-    filenames=[k for k in keypoints.keys() if keypoints[k]['is_it_test_sample']]
-    filenames.sort()
-    filenames=filenames[:13*8]
-    dataset = Database( dataset_name, number_of_clusters,test=True)
-    for i in range(len(filenames)):
+    FAN = FAN_Model(criterion, 
+                    config.experiment_name,
+                    config.confidence_thres_FAN, 
+                    log_path,
+                    1)
 
-        ax = plt.subplot(gs1[i])
-        plt.axis('off')
-        pointstoshow = keypoints[filenames[i]]['prediction']
-        image = dataset.getimage_FAN(dataset, filenames[i])
-        ax.imshow(image)
-        colors = [utils.colorlist[int(i)] for i in np.arange(len(pointstoshow))]
-        ax.scatter(pointstoshow[:, 0], pointstoshow[:, 1], s=400, c=colors, marker='P',edgecolors='black', linewidths=0.3)
-    fig.show()
+    FAN.init_firststage( config.lr,
+                        config.weight_decay,
+                        config.M,
+                        config.bootstrapping_iterations,
+                        config.iterations_per_round,
+                        config.K,
+                        config.nms_thres_FAN,
+                        config.lr_step_schedual_stage1)
 
-    filename = get_logs_path(experiment_name,log_path) / 'Step2.jpg'
-    fig.savefig(filename)
+    cluster_dataset = Database( config.dataset_name, 
+                                metadata,
+                                function_for_dataloading=Database.get_FAN_inference )
+    cluster_dataloader = DataLoader(cluster_dataset, batch_size=config.batchSize, shuffle=False,num_workers=config.num_workers, drop_last=False)
+    path_to_checkpoint=config.path_to_checkpoint
+    if(path_to_checkpoint is None ):
+        path_to_checkpoint=GetPathsResumeFirstStage(config.experiment_name,log_path)
+    FAN.load_trained_fiststage_model(path_to_checkpoint)
 
-    log_text(f"Step2 results created in {filename}", experiment_name,log_path)
+    keypoints, keypoints_val,_= FAN.Update_pseudoLabels(cluster_dataloader)
+    ShowClusters( keypoints_val, log_path, config.experiment_name,config.K, cluster_dataset, config.patch_size)
 
+def ShowClusters(keypoints,log_path,experiment_name,number_of_clusters, dataset, patch_size = -1):
+      
+    # image_names=list(keypoints.keys())
+    # random.shuffle(image_names)
 
-def ShowClusters(keypoints,log_path,experiment_name,number_of_clusters,dataset_name):
-    dataset = Database( dataset_name, number_of_clusters )
-
-    image_names=list(keypoints.keys())
-    random.shuffle(image_names)
+    ###
+    image_names=[k for k in keypoints.keys()]
+    image_names.sort()
+    image_names=image_names[:13*8]
+    ###
 
     for cluster_number in range(number_of_clusters):
         
@@ -77,27 +82,44 @@ def ShowClusters(keypoints,log_path,experiment_name,number_of_clusters,dataset_n
         while counter_figureimages<64:
 
             #for the case where cluster has less than 64 instances
-            if(counter_datasetimages>len(keypoints)-1):
+            if(counter_datasetimages>len(keypoints)-1) or counter_datasetimages >= len(image_names):
                 filename = get_logs_path(experiment_name,log_path) / f'Cluster{cluster_number}.jpg'
                 fig.savefig(filename)
                 break
-                
-            imagename=image_names[counter_datasetimages]
+            
+            imagename = image_names[counter_datasetimages]
             imagepoints = keypoints[imagename]
 
-            #if cluster exists in image
-            if(sum(imagepoints[:, 2]==cluster_number)>0):
-                image = dataset.getimage_FAN(dataset,imagename)
-                ax=subplots[counter_figureimages]
-                ax.imshow(image)
-                ax.scatter(4*imagepoints[imagepoints[:, 2]==cluster_number,0], 4*imagepoints[imagepoints[:, 2]==cluster_number, 1])
-                counter_figureimages+=1
+            
+            image ,_= dataset.Datasource.getimage_FAN(imagename, is_it_test_sample=False)
+            ax=subplots[counter_figureimages]
+
+            if(imagepoints.shape[1]==2):
+              imagepoints=np.append(imagepoints,np.arange(len(imagepoints)).reshape(-1,1),axis=1)
+
+            # image = np.pad(image, 10)
+            x = 4*imagepoints[imagepoints[:, 2]==cluster_number, 0]
+            y = 4*imagepoints[imagepoints[:, 2]==cluster_number, 1]
+            max_side = image.shape[0]
+
+            if len(x) == 0:
+              counter_datasetimages += 1
+              continue
+            if patch_size != -1:
+              image = image[max(0,int(y[0]) - (patch_size // 2)): min(max_side,int(y[0])+(patch_size // 2)), max(0,int(x[0]) - (patch_size // 2)) : min(max_side,int(x[0])+(patch_size // 2)), :]
+              ax.imshow(image)
+            else:
+              ax.imshow(image)
+              ax.scatter(x,y)
+
+            counter_figureimages+=1
 
             counter_datasetimages+=1
 
         filename = get_logs_path(experiment_name,log_path) / f'Cluster{cluster_number}.jpg'
         fig.savefig(filename)
         log_text(f"Cluster images created in {filename}", experiment_name,log_path)
+        plt.close(fig)
 
 
 if __name__=="__main__":

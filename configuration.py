@@ -15,6 +15,7 @@ class Configuration():
         parser.add_argument('--resume', action='store_true', help='If True stage 1 and 2 will resume form last saved checkpoint and pseudogroundtruth.')
         parser.add_argument('--stage',default=1,help='Speficy the stage of the algorithm you want to evaluate on eval.py')
         parser.add_argument('--path_to_checkpoint',default=None)
+        parser.add_argument('--patch_size',default=-1)
 
 
         args = parser.parse_args()
@@ -40,8 +41,8 @@ class Configuration():
         #params Stage 1
         hyperparameters.batchSize_superpoint=16
         hyperparameters.confidence_thres_superpoint=0.15
-        hyperparameters.bootstrapping_iterations=30000 # First training before keypoints found...?
-        hyperparameters.iterations_per_round=5000 # How often clusters are done
+        hyperparameters.bootstrapping_iterations=1000 # First training before keypoints found...?
+        hyperparameters.iterations_per_round=1000 # How often clusters are done
         hyperparameters.total_iterations_stage1=200000 # Max iters
         hyperparameters.remove_superpoint_outliers_percentage=0.4
         hyperparameters.M=100
@@ -63,6 +64,8 @@ class Configuration():
         hyperparameters.iterations_per_round=int(hyperparameters.iterations_per_round/hyperparameters.gpunum)
         hyperparameters.lr=hyperparameters.lr*hyperparameters.gpunum
         hyperparameters.batchSize=hyperparameters.batchSize*hyperparameters.gpunum
+
+        hyperparameters.patch_size=int(args.patch_size)
 
         self.params=hyperparameters
 

@@ -124,17 +124,18 @@ class FAN_Model():
 
         try:
             checkpoint = torch.load(checkpoint_filename, map_location='cpu')
+            
             self.model.load_state_dict(checkpoint['state_dict'])
         except:
             # create new OrderedDict that does contain `module.`
             from collections import OrderedDict
             new_state_dict = OrderedDict()
             for k, v in checkpoint['state_dict'].items():
-                name = 'module.'+k # remove `module.`
+                # name = 'module.'+k # remove `module.`
+                name = k.replace("module.", "")
                 new_state_dict[name] = v
             self.model.load_state_dict(new_state_dict)
             # raise Exception(f'Loading weights for FAN from {checkpoint_filename} failed.')
-
         self.iterations = checkpoint['iteration']
         self.centroid= checkpoint['centroid']
 
